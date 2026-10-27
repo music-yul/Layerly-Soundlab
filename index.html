@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Melody Merger</title>
+<title>Layerly</title>
 <style>
 :root{--bg:#f2f5f7;--card:#fff;--ink:#1c2b39;--sub:#5b6b7a;--line:#d5dde4;--a:#0e7c86;--b:#c26a00;--main:#2a4fd6;--err:#c0392b}
 *{box-sizing:border-box}
@@ -54,14 +54,15 @@ label.l{font-size:14px;color:var(--sub)}
 #msg.err{color:var(--err)}
 .hidden{display:none}
 .hint{font-size:13px;color:var(--sub);margin-top:14px}
-[hidden]{display:none!important}select,input[type=number]{font:inherit;border:1px solid var(--line);border-radius:6px;padding:4px 6px}input[type=number]{width:76px}.chip label{display:block;font-size:12px;margin-top:5px}.chip input{color:var(--ink)}.chip.k2{background:#7651b5}.chip.k3{background:#c13f76}.slot[data-k="2"]{border-top-color:#7651b5}.slot[data-k="3"]{border-top-color:#c13f76}.add2{color:#7651b5}.add3{color:#c13f76}.track{display:flex;gap:10px;align-items:center;margin:6px 0}.track strong{width:18px}.lane{position:relative;flex:1;height:34px;background:#e4eaf0;border-radius:6px;overflow:hidden}.segment{position:absolute;top:2px;bottom:2px;color:white;white-space:nowrap;overflow:hidden;font-size:12px;padding:4px;border-radius:4px;border:1px solid #ffffff80}main{max-width:1120px}</style>
+[hidden]{display:none!important}select,input[type=number]{font:inherit;border:1px solid var(--line);border-radius:6px;padding:4px 6px}input[type=number]{width:76px}.chip label{display:block;font-size:12px;margin-top:5px}.chip input{color:var(--ink)}.chip.k2{background:#7651b5}.chip.k3{background:#c13f76}.slot[data-k="2"]{border-top-color:#7651b5}.slot[data-k="3"]{border-top-color:#c13f76}.add2{color:#7651b5}.add3{color:#c13f76}.track{display:flex;gap:10px;align-items:center;margin:6px 0}.track strong{width:18px}.lane{position:relative;flex:1;height:34px;background:#e4eaf0;border-radius:6px;overflow:hidden}.segment{position:absolute;top:2px;bottom:2px;color:white;white-space:nowrap;overflow:hidden;font-size:12px;padding:4px;border-radius:4px;border:1px solid #ffffff80}main{max-width:1120px}.app-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:16px}.brand-sub{color:var(--sub);font-size:13px;margin:2px 0}.identity{text-align:right}.participant{display:flex;justify-content:flex-end;align-items:flex-end;gap:7px;margin-bottom:7px}.participant label{font-size:12px;text-align:left;color:var(--sub)}.participant input[type=text]{display:block;width:110px;margin-top:3px}.identity>button{color:var(--sub)}@media(max-width:600px){.app-header{flex-direction:column}.identity{width:100%}.participant{justify-content:flex-start}.participant input[type=text]{width:120px}}
+</style>
 </head>
 <body>
 <main>
-<h1>Melody Merger</h1>
-<p class="lead">각자의 가락을 이어 붙이거나 겹쳐 하나의 음악으로 만들어 보세요.</p>
+<header class="app-header"><div><h1>Layerly</h1><p class="brand-sub">소리를 잇고, 겹치고, 완성하다.</p></div><section class="identity" aria-label="참여자 정보"><div id="participants"><div class="participant"><label>학번<input class="student-number" type="text" inputmode="numeric" maxlength="10" placeholder="학번" autocomplete="off"></label><label>이름<input class="student-name" type="text" maxlength="30" placeholder="이름" autocomplete="off"></label></div></div><button id="addParticipant" class="sm" type="button">+ 함께한 사람 추가</button></section></header>
+<p class="lead">음원을 이어 붙이거나 겹쳐 하나의 음악으로 만들어 보세요.</p>
 
-<div class="row" style="margin-bottom:14px"><button id="addPerson">+ 1명 추가</button><span id="personCount">2인 · 최대 4인</span></div><div class="slots" id="slots"></div>
+<div class="row" style="margin-bottom:14px"><button id="addPerson">+ 음원 추가</button><span id="personCount">음원 2개 · 최대 4개</span></div><div class="slots" id="slots"></div>
 
 <section class="card panel">
   <h2>곡 구성</h2><div class="row" style="margin-bottom:12px"><label>합치기 방식 <select id="mixMode"><option value="sequence">순서대로 이어 붙이기</option><option value="parallel">트랙별로 겹쳐 합치기</option></select></label></div><p id="modeHint" class="hint">선택한 구간을 원하는 순서로 이어 붙입니다.</p><div id="timeline" aria-label="트랙별 재생 위치"></div>
@@ -78,11 +79,9 @@ label.l{font-size:14px;color:var(--sub)}
 </section>
 
 <section class="card panel">
-  <h2>구성 이유</h2>
-  <textarea id="why" placeholder="선율을 어떤 순서와 횟수로 배치하거나 겹쳤는지, 그렇게 구성한 이유가 무엇인지 구체적으로 작성하세요."></textarea>
+  <h2>내보내기</h2>
   <div class="row">
-    <label class="l" for="who">학번·이름</label><input id="who" type="text" maxlength="150" placeholder="함께한 학생들의 학번·이름">
-    <button id="copy" disabled>구성 기록 복사</button>
+    <button id="saveImage" disabled>구성 이미지 다운로드</button>
     <button id="dl" class="primary" disabled>WAV 파일로 저장</button>
   </div>
   <div id="msg" role="status" aria-live="polite"></div>
@@ -227,7 +226,7 @@ label.l{font-size:14px;color:var(--sub)}
   $('#add0').addEventListener('click', function(){ add(0); });
   $('#add1').addEventListener('click', function(){ add(1); });
   $('#add2').addEventListener('click',function(){add(2);});$('#add3').addEventListener('click',function(){add(3);});
-  $('#addPerson').onclick=function(){if(people>=4)return;people++;slotEl[people-1].hidden=false;$('#add'+(people-1)).hidden=false;$('#personCount').textContent=people+'인 · 최대 4인';this.disabled=people>=4;render();};
+  $('#addPerson').onclick=function(){if(people>=4)return;people++;slotEl[people-1].hidden=false;$('#add'+(people-1)).hidden=false;$('#personCount').textContent='음원 '+people+'개 · 최대 4개';this.disabled=people>=4;render();};
   $('#mixMode').onchange=function(){stop();mode=this.value;if(mode==='parallel'){var ends=[0,0,0,0];blocks.forEach(function(b){b.at=ends[b.k];ends[b.k]+=b.e-b.s;});}if(duration()>300){mode='parallel';this.value=mode;say('이어 붙이면 5분을 넘어 겹치기 방식을 유지합니다.',true);}$('#modeHint').textContent=mode==='parallel'?'A·B·C·D는 각각 한 트랙입니다. 시작(초)과 음량을 조절해 원하는 시점에 겹쳐 보세요.':'선택한 구간을 원하는 순서로 이어 붙입니다.';render();};
   $('#clear').addEventListener('click', function(){ stopAll(); blocks = []; render(); });
 
@@ -255,7 +254,7 @@ label.l{font-size:14px;color:var(--sub)}
     });
     var has = blocks.length > 0, total = duration();renderTimeline();
     $('#sum').textContent = has ? '구성: ' + blocks.map(function(b){ return NAMES[b.k]; }).join(mode==='parallel'?' + ':' → ') + '  ·  총 ' + fmt(total) : '';
-    $('#clear').disabled = $('#dl').disabled = $('#copy').disabled = !has;
+    $('#clear').disabled = $('#dl').disabled = $('#saveImage').disabled = !has;
     ui();
   }
   function swap(a, b){ stopAll(); var t = blocks[a]; blocks[a] = blocks[b]; blocks[b] = t; render(); }
@@ -342,19 +341,30 @@ label.l{font-size:14px;color:var(--sub)}
   $('#pzAll').addEventListener('click', function(){ pauseToggle('all'); });
   $('#stAll').addEventListener('click', stop);
 
-  // ---- 기록 복사 · WAV 저장 ----
-  function record(){
-    var total = duration();
-    return '[' + ($('#who').value.trim() || '이름 미입력') + ']\n구성: ' +
-      blocks.map(function(b,i){return NAMES[b.k]+'('+f1(b.s)+'~'+f1(b.e)+'초 / 시작 '+f1(schedule()[i].at)+'초 / 음량 '+Math.round((b.gain==null?1:b.gain)*100)+'%)';}).join(mode==='parallel'?' + ':' → ') +
-      ' (총 ' + fmt(total) + ')\n구성 이유: ' + ($('#why').value.trim() || '(미작성)');
+  var participantCount=1;
+  $('#addParticipant').onclick=function(){if(participantCount>=4)return;participantCount++;var row=document.createElement('div');row.className='participant';row.innerHTML='<label>학번<input class="student-number" type="text" inputmode="numeric" maxlength="10" placeholder="학번" autocomplete="off"></label><label>이름<input class="student-name" type="text" maxlength="30" placeholder="이름" autocomplete="off"></label><button class="sm" type="button" aria-label="참여자 삭제">삭제</button>';row.querySelector('button').onclick=function(){row.remove();participantCount--;$('#addParticipant').disabled=false;};$('#participants').appendChild(row);this.disabled=participantCount>=4;};
+  function participantText(){return Array.from(document.querySelectorAll('#participants .participant')).map(function(row){return [row.querySelector('.student-number').value.trim(),row.querySelector('.student-name').value.trim()].filter(Boolean).join(' ');}).filter(Boolean).join('_');}
+  // ---- 구성 이미지 · WAV 저장 ----
+  function compositionImage(){
+    if(!blocks.length)return null;
+    var times=schedule(),total=duration(),tracks=[],left=90,width=1420;
+    for(var k=0;k<people;k++){var ends=[],items=[];blocks.map(function(b,i){return {b:b,i:i,t:times[i]};}).filter(function(x){return x.b.k===k;}).sort(function(a,b){return a.t.at-b.t.at||a.i-b.i;}).forEach(function(x){var lane=ends.findIndex(function(e){return e<=x.t.at+0.000001;});if(lane<0)lane=ends.length;ends[lane]=x.t.end;x.lane=lane;items.push(x);});tracks.push({k:k,items:items,lanes:Math.max(1,ends.length)});}
+    var height=300+tracks.reduce(function(n,t){return n+78+t.lanes*44;},0)+140+blocks.length*36;
+    var canvas=document.createElement('canvas');canvas.width=1600;canvas.height=height;var g=canvas.getContext('2d');
+    var font='"Noto Sans KR","Malgun Gothic",sans-serif';
+    function text(t,x,y,size,color,bold){g.font=(bold?'700 ':'400 ')+size+'px '+font;g.fillStyle=color||'#1c2b39';g.fillText(t,x,y);}
+    function fit(t,max){while(t.length&&g.measureText(t).width>max)t=t.slice(0,-2)+'…';return t;}
+    g.fillStyle='#fff';g.fillRect(0,0,1600,height);text('Layerly · 음원 구성',70,80,38,null,true);
+    var identity=participantText().split('_');identity.forEach(function(t,i){text(t||'이름 미입력',70,124+i*32,23);});
+    var y=150+Math.max(0,identity.length-1)*32;text((mode==='parallel'?'트랙별 겹치기':'순서대로 이어 붙이기')+' · 전체 '+f1(total)+'초',70,y+20,24,'#5b6b7a');y+=60;
+    // Reserve enough vertical space for up to four participant names.
+    if(identity.length>1){height+=(identity.length-1)*32;canvas.height=height;g.fillStyle='#fff';g.fillRect(0,0,1600,height);text('Layerly · 음원 구성',70,80,38,null,true);identity.forEach(function(t,i){text(t||'이름 미입력',70,124+i*32,23);});text((mode==='parallel'?'트랙별 겹치기':'순서대로 이어 붙이기')+' · 전체 '+f1(total)+'초',70,170+(identity.length-1)*32,24,'#5b6b7a');}
+    tracks.forEach(function(track){var k=track.k;g.font='400 20px '+font;text(NAMES[k]+' · '+fit(clips[k]?(clips[k].name||'음원'):'미등록',1400),70,y,20,COLORS[k],true);y+=18;var laneHeight=track.lanes*44;g.fillStyle='#edf1f5';g.fillRect(left,y,width,laneHeight);for(var tick=0;tick<=5;tick++){var x=left+width*tick/5;g.strokeStyle='#d5dde4';g.beginPath();g.moveTo(x,y);g.lineTo(x,y+laneHeight);g.stroke();}track.items.forEach(function(x){var bx=left+x.t.at/total*width,bw=(x.b.e-x.b.s)/total*width,by=y+x.lane*44+3;g.fillStyle=COLORS[k];g.fillRect(bx,by,Math.max(2,bw),38);g.save();g.beginPath();g.rect(bx+2,by,Math.max(0,bw-4),38);g.clip();text((x.i+1)+'. '+NAMES[k],bx+6,by+26,18,'#fff',true);g.restore();});y+=laneHeight+24;for(var tick=0;tick<=5;tick++)text(f1(total*tick/5)+'초',left+width*tick/5-(tick===5?55:0),y,16,'#5b6b7a');y+=36;});
+    y+=22;text('구간별 구성 기록',70,y,26,null,true);y+=38;
+    blocks.forEach(function(b,i){text((i+1)+'. '+NAMES[b.k]+'  |  원본 '+f1(b.s)+'~'+f1(b.e)+'초  |  배치 '+f1(times[i].at)+'~'+f1(times[i].end)+'초  |  음량 '+Math.round((b.gain==null?1:b.gain)*100)+'%',70,y,21);y+=36;});
+    text('Layerly · 소리를 잇고, 겹치고, 완성하다.',70,height-34,18,'#5b6b7a');return canvas;
   }
-  $('#copy').addEventListener('click', function(){
-    var t = record();
-    function ok(){ say('구성 기록을 복사했습니다. 제출 양식에 붙여 넣으세요.'); }
-    function fallback(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); ok(); }catch(e){ say('복사하지 못했습니다. 직접 선택해서 복사해 주세요.', true); } ta.remove(); }
-    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(ok, fallback); } else fallback();
-  });
+  $('#saveImage').onclick=async function(){if(!blocks.length)return;this.disabled=true;try{if(document.fonts)await document.fonts.ready;var canvas=compositionImage();canvas.toBlob(function(blob){if(!blob){say('이미지를 만들지 못했습니다. 다시 시도해 주세요.',true);$('#saveImage').disabled=false;return;}var name=(participantText()?participantText().replace(/[\\/:*?"<>|]/g,'_')+'_':'')+'Layerly_구성.png',url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},4000);say('구성 이미지를 저장했습니다. 음원과 함께 제출해 주세요.');$('#saveImage').disabled=false;},'image/png');}catch(e){say('이미지를 저장하지 못했습니다. 다시 시도해 주세요.',true);this.disabled=false;}};
 
   function toWav(L, R){
     var n = L.length, buf = new ArrayBuffer(44 + n*4), v = new DataView(buf);
@@ -372,8 +382,8 @@ label.l{font-size:14px;color:var(--sub)}
     return new Blob([buf], {type:'audio/wav'});
   }
   $('#dl').addEventListener('click', function(){
-    var d = build(), who = $('#who').value.replace(/[\\/:*?"<>|]/g,'_').trim();
-    var name = (who ? who + '_' : '') + 'MelodyMerger';
+    var d = build(), who = participantText().replace(/[\\/:*?"<>|]/g,'_').trim();
+    var name = (who ? who + '_' : '') + 'Layerly';
     var url = URL.createObjectURL(toWav(d[0], d[1]));
     var a = document.createElement('a'); a.href = url; a.download = name + '.wav';
     document.body.appendChild(a); a.click(); a.remove();
