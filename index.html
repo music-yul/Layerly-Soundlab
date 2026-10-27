@@ -58,6 +58,8 @@ label.l{font-size:14px;color:var(--sub)}
 .time-ruler{position:relative;height:30px;margin:6px 0 0;color:var(--sub);font-size:12px}.time-ruler span{position:absolute;top:5px;transform:translateX(-50%);white-space:nowrap}.time-ruler span:before{content:"";position:absolute;top:-7px;left:50%;height:5px;border-left:1px solid #91a0ad}.time-ruler .first{transform:none}.time-ruler .last{transform:translateX(-100%)}.timeline-ruler{flex:1}.lane{background-image:linear-gradient(to right,#cbd5df 1px,transparent 1px);background-size:20% 100%}.range-inputs label{font-size:13px}.range-inputs input{width:95px}
 input[aria-invalid="true"]{border-color:var(--err)!important;outline:2px solid #c0392b30}
 .chip.k4{background:#397c32}.chip.k5{background:#2867b2}.slot[data-k="4"]{border-top-color:#397c32}.slot[data-k="5"]{border-top-color:#2867b2}.add4{color:#397c32}.add5{color:#2867b2}
+
+.slots{align-items:start;gap:10px}.slot{padding:10px 12px;border-top-width:4px}.slot-top{display:flex;align-items:center;gap:12px;justify-content:space-between}.slot-top h2{font-size:15px;margin:0;white-space:nowrap}.slot-top .drop{border:1px dashed #aebec9;padding:5px 10px;font-size:13px;text-align:left;line-height:1.4;border-radius:6px;color:var(--main);background:#f6f8ff}.slot-top .drop small{font-size:11px;color:var(--sub);margin-left:5px}.slot .info{font-size:12px;margin:5px 0 0;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.clip-editor{margin-top:7px}.slot canvas.wf{height:58px}.slot .time-ruler{height:23px;margin-top:3px;font-size:11px}.slot .rng{min-height:0;font-size:12px;margin:1px 0 0;line-height:1.4}.slot .range-inputs{margin-top:5px;gap:12px}.slot .range-inputs label{font-size:12px}.slot .range-inputs input{padding:3px 5px;width:82px;font-size:12px}.clip-actions{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;padding:7px 0 1px;scrollbar-width:thin}.clip-actions button{flex:0 0 auto;padding:5px 7px;font-size:12px;line-height:1.4;font-weight:600;border-radius:6px}.clip-actions .pa{background:#e8f2f4;color:#086873;border-color:#abd0d4}.clip-actions .pv{background:#2a4fd6;color:white;border-color:#2a4fd6}.clip-actions .pz{background:#fff5df;color:#825600;border-color:#e7d3a6}.clip-actions .st{background:#fff0ef;color:#a32e27;border-color:#e7bcb8}.clip-actions .trim,.clip-actions .reset{background:#f0f3f7;color:#405368;border-color:#cbd5df}.clip-actions button:disabled{opacity:.42}@media(max-width:400px){.slot-top .drop small{display:none}}
 </style>
 </head>
 <body>
@@ -105,13 +107,12 @@ input[aria-invalid="true"]{border-color:var(--err)!important;outline:2px solid #
   // ---- 화면 만들기 ----
   [0, 1, 2, 3, 4, 5].forEach(function(k){
     var el = document.createElement('section'); el.className = 'card slot'; el.dataset.k = k;
-    el.innerHTML = '<h2>' + NAMES[k] + ' 음원</h2>' +
-      '<div class="drop" tabindex="0" role="button" aria-label="' + NAMES[k] + ' 음원 파일 선택">파일을 끌어 놓거나 눌러서 선택<br><small>wav, mp3, m4a</small></div>' +
-      '<input type="file" accept="audio/*" class="hidden"><div class="info">아직 파일이 없습니다.</div>' +
-      '<div class="wfwrap"><canvas class="wf" aria-label="' + NAMES[k] + ' 음원 구간 선택"></canvas><div class="ph"></div></div><div class="time-ruler source-ruler" aria-label="음원 시간 눈금"></div><div class="rng"></div>' +
+    el.innerHTML = '<div class="slot-top"><h2>' + NAMES[k] + ' 음원</h2>' +
+      '<div class="drop" tabindex="0" role="button" aria-label="' + NAMES[k] + ' 음원 파일 선택">＋ 음원 선택 <small>또는 파일 끌어놓기</small></div></div>' +
+      '<input type="file" accept="audio/*" class="hidden"><div class="info">WAV · MP3 · M4A 파일을 선택하세요.</div>' +
+      '<div class="clip-editor" hidden><div class="wfwrap"><canvas class="wf" aria-label="' + NAMES[k] + ' 음원 구간 선택"></canvas><div class="ph"></div></div><div class="time-ruler source-ruler" aria-label="음원 시간 눈금"></div><div class="rng"></div>' +
       '<div class="row range-inputs"><label>시작(초) <input class="range-start" type="number" min="0" step="0.01" disabled></label><label>끝(초) <input class="range-end" type="number" min="0" step="0.01" disabled></label></div>' +
-      '<div class="row"><button class="pa">전체 듣기</button><button class="pv">선택 구간 듣기</button><button class="pz">일시정지</button><button class="st">정지</button></div>' +
-      '<div class="row"><button class="trim sm">끝 여백 자동 자르기</button><button class="reset sm">전체 구간</button></div>';
+      '<div class="clip-actions" role="group" aria-label="음원 재생과 편집"><button class="pa" title="음원 전체 재생">▶ 전체</button><button class="pv" title="선택 구간 재생">▶ 선택</button><button class="pz">Ⅱ 일시정지</button><button class="st" title="재생 정지">■ 정지</button><button class="trim" title="음원 끝의 여백 자동 자르기">✂ 여백 자르기</button><button class="reset" title="선택 구간을 원본 전체로 초기화">↺ 전체 구간</button></div></div>';
     $('#slots').appendChild(el); slotEl.push(el);el.hidden=k>=people;
   });
 
@@ -167,7 +168,7 @@ input[aria-invalid="true"]{border-color:var(--err)!important;outline:2px solid #
         }
         peaks[k] = pk;
         $('.info', slotEl[k]).textContent = file.name + ' · ' + fmt(clips[k].dur);
-        say(''); paint(k); render();
+        $('.clip-editor',slotEl[k]).hidden=false;say(''); paint(k); render();
       }, function(){ say('이 파일은 읽을 수 없습니다. wav, mp3, m4a 파일인지 확인해 주세요.', true); });
     };
     fr.readAsArrayBuffer(file);
@@ -182,7 +183,7 @@ input[aria-invalid="true"]{border-color:var(--err)!important;outline:2px solid #
   }
   function paint(k){
     var c = $('canvas', slotEl[k]), pk = peaks[k];if(clips[k]){drawRuler($('.source-ruler',slotEl[k]),clips[k].dur);$('.range-start',slotEl[k]).value=rng[k].s.toFixed(2);$('.range-end',slotEl[k]).value=rng[k].e.toFixed(2);$('.range-start',slotEl[k]).max=$('.range-end',slotEl[k]).max=clips[k].dur;}
-    var dpr = window.devicePixelRatio || 1, w = c.width = c.clientWidth * dpr, h = c.height = 76 * dpr;
+    var dpr = window.devicePixelRatio || 1, w = c.width = c.clientWidth * dpr, h = c.height = 58 * dpr;
     var g = c.getContext('2d'); g.clearRect(0,0,w,h);
     if(!pk) return;
     g.fillStyle = COLORS[k];
@@ -337,7 +338,7 @@ input[aria-invalid="true"]{border-color:var(--err)!important;outline:2px solid #
       var en = !!clips[k], mine = !!(P && P.kind === 'clip' && P.k === k);
       ['.pa','.pv','.trim','.reset','.range-start','.range-end'].forEach(function(s){ $(s, el).disabled = !en; });
       $('.pz', el).disabled = $('.st', el).disabled = !mine;
-      $('.pz', el).textContent = (mine && P.paused) ? '계속 재생' : '일시정지';
+      $('.pz', el).textContent = (mine && P.paused) ? '▶ 계속' : 'Ⅱ 일시정지';
       $('#add' + k).disabled = !en;
     });
     var all = !!(P && P.kind === 'all');
