@@ -54,21 +54,21 @@ label.l{font-size:14px;color:var(--sub)}
 #msg.err{color:var(--err)}
 .hidden{display:none}
 .hint{font-size:13px;color:var(--sub);margin-top:14px}
-</style>
+[hidden]{display:none!important}select,input[type=number]{font:inherit;border:1px solid var(--line);border-radius:6px;padding:4px 6px}input[type=number]{width:76px}.chip label{display:block;font-size:12px;margin-top:5px}.chip input{color:var(--ink)}.chip.k2{background:#7651b5}.chip.k3{background:#c13f76}.slot[data-k="2"]{border-top-color:#7651b5}.slot[data-k="3"]{border-top-color:#c13f76}.add2{color:#7651b5}.add3{color:#c13f76}.track{display:flex;gap:10px;align-items:center;margin:6px 0}.track strong{width:18px}.lane{position:relative;flex:1;height:34px;background:#e4eaf0;border-radius:6px;overflow:hidden}.segment{position:absolute;top:2px;bottom:2px;color:white;white-space:nowrap;overflow:hidden;font-size:12px;padding:4px;border-radius:4px;border:1px solid #ffffff80}main{max-width:1120px}</style>
 </head>
 <body>
 <main>
 <h1>Melody Merger</h1>
-<p class="lead">A, B 두 음원을 원하는 순서와 횟수로 배치하여 16마디 이상의 나만의 곡을 만들어 보세요.</p>
+<p class="lead">각자의 가락을 이어 붙이거나 겹쳐 하나의 음악으로 만들어 보세요.</p>
 
-<div class="slots" id="slots"></div>
+<div class="row" style="margin-bottom:14px"><button id="addPerson">+ 1명 추가</button><span id="personCount">2인 · 최대 4인</span></div><div class="slots" id="slots"></div>
 
 <section class="card panel">
-  <h2>곡 구성</h2>
+  <h2>곡 구성</h2><div class="row" style="margin-bottom:12px"><label>합치기 방식 <select id="mixMode"><option value="sequence">순서대로 이어 붙이기</option><option value="parallel">트랙별로 겹쳐 합치기</option></select></label></div><p id="modeHint" class="hint">선택한 구간을 원하는 순서로 이어 붙입니다.</p><div id="timeline" aria-label="트랙별 재생 위치"></div>
   <div class="row" style="margin:0 0 10px">
     <button class="add0" id="add0" disabled>+ A 넣기</button>
     <button class="add1" id="add1" disabled>+ B 넣기</button>
-    <button id="clear" disabled>모두 지우기</button>
+    <button class="add2" id="add2" hidden disabled>+ C 넣기</button><button class="add3" id="add3" hidden disabled>+ D 넣기</button><button id="clear" disabled>모두 지우기</button>
     <span style="font-size:13px;color:var(--sub)">위에서 고른 구간이 그대로 들어갑니다.</span>
   </div>
   <div id="line" aria-label="곡 구성 순서"></div>
@@ -79,9 +79,9 @@ label.l{font-size:14px;color:var(--sub)}
 
 <section class="card panel">
   <h2>구성 이유</h2>
-  <textarea id="why" placeholder="두 선율을 어떤 순서와 횟수로 배치했는지, 그렇게 구성한 이유가 무엇인지 구체적으로 작성하세요."></textarea>
+  <textarea id="why" placeholder="선율을 어떤 순서와 횟수로 배치하거나 겹쳤는지, 그렇게 구성한 이유가 무엇인지 구체적으로 작성하세요."></textarea>
   <div class="row">
-    <label class="l" for="who">학번·이름</label><input id="who" type="text" maxlength="20" placeholder="예: 20305 홍길동">
+    <label class="l" for="who">학번·이름</label><input id="who" type="text" maxlength="150" placeholder="함께한 학생들의 학번·이름">
     <button id="copy" disabled>구성 기록 복사</button>
     <button id="dl" class="primary" disabled>WAV 파일로 저장</button>
   </div>
@@ -95,13 +95,13 @@ label.l{font-size:14px;color:var(--sub)}
 (function(){
   var SR = 44100, MAXB = 16, MINLEN = 0.1, NP = 1200;
   var ctx = null, master = null, P = null, raf = 0;
-  var clips = [null, null], rng = [null, null], peaks = [null, null], blocks = [];
+  var clips = [null, null, null, null], rng = [null, null, null, null], peaks = [null, null, null, null], blocks = [];
   var $ = function(s, r){ return (r||document).querySelector(s); };
-  var msg = $('#msg'), COLORS = ['#0e7c86', '#c26a00'], NAMES = ['A', 'B'];
-  var slotEl = [];
+  var msg = $('#msg'), COLORS = ['#0e7c86', '#c26a00', '#7651b5', '#c13f76'], NAMES = ['A', 'B', 'C', 'D'];
+  var slotEl = [], people=2, mode='sequence';
 
   // ---- 화면 만들기 ----
-  [0, 1].forEach(function(k){
+  [0, 1, 2, 3].forEach(function(k){
     var el = document.createElement('section'); el.className = 'card slot'; el.dataset.k = k;
     el.innerHTML = '<h2>' + NAMES[k] + ' 음원</h2>' +
       '<div class="drop" tabindex="0" role="button" aria-label="' + NAMES[k] + ' 음원 파일 선택">파일을 끌어 놓거나 눌러서 선택<br><small>wav, mp3, m4a</small></div>' +
@@ -109,7 +109,7 @@ label.l{font-size:14px;color:var(--sub)}
       '<div class="wfwrap"><canvas class="wf" aria-label="' + NAMES[k] + ' 음원 구간 선택"></canvas><div class="ph"></div></div><div class="rng"></div>' +
       '<div class="row"><button class="pa">전체 듣기</button><button class="pv">선택 구간 듣기</button><button class="pz">일시정지</button><button class="st">정지</button></div>' +
       '<div class="row"><button class="trim sm">끝 여백 자동 자르기</button><button class="reset sm">전체 구간</button></div>';
-    $('#slots').appendChild(el); slotEl.push(el);
+    $('#slots').appendChild(el); slotEl.push(el);el.hidden=k>=people;
   });
 
   function getCtx(){
@@ -145,12 +145,12 @@ label.l{font-size:14px;color:var(--sub)}
   });
 
   function load(k, file){
-    stop(); say('음원을 읽는 중입니다…');
+    if(file.size>20*1024*1024){say('음원은 20MB 이하로 올려 주세요.',true);return;}stop(); say('음원을 읽는 중입니다…');
     var fr = new FileReader();
     fr.onerror = function(){ say('파일을 읽지 못했습니다. 다시 선택해 주세요.', true); };
     fr.onload = function(){
       getCtx().decodeAudioData(fr.result, function(buf){
-        var L = buf.getChannelData(0).slice();
+        if(buf.duration>300){say('음원은 5분 이내로 올려 주세요.',true);return;}var L = buf.getChannelData(0).slice();
         var R = buf.numberOfChannels > 1 ? buf.getChannelData(1).slice() : L.slice();
         if(clips[k]){ blocks = blocks.filter(function(b){ return b.k !== k; }); }
         clips[k] = { name: file.name, data: [L, R], dur: buf.length / buf.sampleRate };
@@ -222,21 +222,27 @@ label.l{font-size:14px;color:var(--sub)}
   function stopAll(){ if(P && P.kind === 'all') stop(); }
   function add(k){
     if(blocks.length >= MAXB){ say('최대 ' + MAXB + '개까지 넣을 수 있습니다.', true); return; }
-    stopAll(); blocks.push({k:k, s:rng[k].s, e:rng[k].e}); say(''); render();
+    stopAll();var at=mode==='parallel'?trackEnd(k):0;if((mode==='parallel'?at:duration())+rng[k].e-rng[k].s>300){say('곡 길이는 최대 5분입니다.',true);return;}blocks.push({k:k, s:rng[k].s, e:rng[k].e,at:at,gain:1}); say(''); render();
   }
   $('#add0').addEventListener('click', function(){ add(0); });
   $('#add1').addEventListener('click', function(){ add(1); });
+  $('#add2').addEventListener('click',function(){add(2);});$('#add3').addEventListener('click',function(){add(3);});
+  $('#addPerson').onclick=function(){if(people>=4)return;people++;slotEl[people-1].hidden=false;$('#add'+(people-1)).hidden=false;$('#personCount').textContent=people+'인 · 최대 4인';this.disabled=people>=4;render();};
+  $('#mixMode').onchange=function(){stop();mode=this.value;if(mode==='parallel'){var ends=[0,0,0,0];blocks.forEach(function(b){b.at=ends[b.k];ends[b.k]+=b.e-b.s;});}if(duration()>300){mode='parallel';this.value=mode;say('이어 붙이면 5분을 넘어 겹치기 방식을 유지합니다.',true);}$('#modeHint').textContent=mode==='parallel'?'A·B·C·D는 각각 한 트랙입니다. 시작(초)과 음량을 조절해 원하는 시점에 겹쳐 보세요.':'선택한 구간을 원하는 순서로 이어 붙입니다.';render();};
   $('#clear').addEventListener('click', function(){ stopAll(); blocks = []; render(); });
 
   function render(){
     var line = $('#line'); line.innerHTML = '';
     if(!blocks.length){
-      line.innerHTML = '<span class="empty">원하는 구간을 선택하고 A 또는 B를 누르면 해당 구간이 곡에 추가됩니다.</span>';
+      line.innerHTML = '<span class="empty">원하는 구간을 선택하고 A·B·C·D 넣기를 누르면 해당 구간이 곡에 추가됩니다.</span>';
     }
     blocks.forEach(function(b, i){
       var part = b.s > 0.005 || b.e < clips[b.k].dur - 0.005;
       var d = document.createElement('div'); d.className = 'chip k' + b.k;
       d.innerHTML = '<b>' + (i+1) + '. ' + NAMES[b.k] + '</b><small>' + f1(b.s) + '~' + f1(b.e) + '초 · ' + f1(b.e-b.s) + '초' + (part ? ' (일부)' : '') + '</small><div class="ctl"></div>';
+      var timing=document.createElement('label');timing.textContent=mode==='parallel'?'시작(초) ':'재생 시작 '+f1(schedule()[i].at)+'초';
+      if(mode==='parallel'){var atInput=document.createElement('input');atInput.type='number';atInput.min=0;atInput.max=300-(b.e-b.s);atInput.step='0.1';atInput.value=f1(b.at||0);atInput.setAttribute('aria-label',(i+1)+'번 '+NAMES[b.k]+' 시작 초');atInput.onchange=function(){var at=Number(this.value);if(!Number.isFinite(at)||at<0||at+b.e-b.s>300){this.value=f1(b.at||0);return;}stop();b.at=at;render();};timing.appendChild(atInput);}d.appendChild(timing);
+      var volume=document.createElement('label');volume.textContent='음량 ';var gain=document.createElement('input');gain.type='number';gain.min=0;gain.max=100;gain.step=5;gain.value=Math.round((b.gain==null?1:b.gain)*100);gain.setAttribute('aria-label',(i+1)+'번 '+NAMES[b.k]+' 음량 퍼센트');gain.onchange=function(){var v=Number(this.value);if(!Number.isFinite(v)||v<0||v>100){this.value=Math.round((b.gain==null?1:b.gain)*100);return;}stop();b.gain=v/100;};volume.appendChild(gain);volume.appendChild(document.createTextNode('%'));d.appendChild(volume);
       var ctl = $('.ctl', d);
       [['◀','앞으로',function(){ swap(i,i-1); }, i===0],
        ['▶','뒤로',function(){ swap(i,i+1); }, i===blocks.length-1],
@@ -247,16 +253,15 @@ label.l{font-size:14px;color:var(--sub)}
       });
       line.appendChild(d);
     });
-    var has = blocks.length > 0, total = 0;
-    blocks.forEach(function(b){ total += b.e - b.s; });
-    $('#sum').textContent = has ? '구성: ' + blocks.map(function(b){ return NAMES[b.k]; }).join(' → ') + '  ·  총 ' + fmt(total) : '';
+    var has = blocks.length > 0, total = duration();renderTimeline();
+    $('#sum').textContent = has ? '구성: ' + blocks.map(function(b){ return NAMES[b.k]; }).join(mode==='parallel'?' + ':' → ') + '  ·  총 ' + fmt(total) : '';
     $('#clear').disabled = $('#dl').disabled = $('#copy').disabled = !has;
     ui();
   }
   function swap(a, b){ stopAll(); var t = blocks[a]; blocks[a] = blocks[b]; blocks[b] = t; render(); }
   function dup(i){
     if(blocks.length >= MAXB){ say('최대 ' + MAXB + '개까지 넣을 수 있습니다.', true); return; }
-    stopAll(); blocks.splice(i+1, 0, {k:blocks[i].k, s:blocks[i].s, e:blocks[i].e}); render();
+    var b=blocks[i],at=mode==='parallel'?trackEnd(b.k):0;if((mode==='parallel'?at:duration())+b.e-b.s>300){say('곡 길이는 최대 5분입니다.',true);return;}stopAll();blocks.splice(i+1,0,{k:b.k,s:b.s,e:b.e,at:at,gain:b.gain});render();
   }
 
   // ---- 소리 만들기 ----
@@ -270,12 +275,14 @@ label.l{font-size:14px;color:var(--sub)}
     });
     return out;
   }
+  function schedule(){var cursor=0;return blocks.map(function(b){var at=mode==='parallel'?(b.at||0):cursor;cursor+=b.e-b.s;return {at:at,end:at+b.e-b.s};});}
+  function duration(){return schedule().reduce(function(n,b){return Math.max(n,b.end);},0);}
+  function trackEnd(k){return blocks.reduce(function(n,b){return b.k===k?Math.max(n,(b.at||0)+b.e-b.s):n;},0);}
+  function renderTimeline(){var box=$('#timeline');box.replaceChildren();if(!blocks.length)return;var times=schedule(),total=duration();for(var k=0;k<people;k++){var row=document.createElement('div');row.className='track';var name=document.createElement('strong');name.textContent=NAMES[k];row.appendChild(name);var lane=document.createElement('div');lane.className='lane';blocks.forEach(function(b,i){if(b.k!==k)return;var bar=document.createElement('span');bar.className='segment';bar.style.left=(times[i].at/total*100)+'%';bar.style.width=((b.e-b.s)/total*100)+'%';bar.style.background=COLORS[k];bar.textContent=(i+1)+'. '+NAMES[k];bar.title=f1(times[i].at)+'~'+f1(times[i].end)+'초';lane.appendChild(bar);});row.appendChild(lane);box.appendChild(row);}var scale=document.createElement('p');scale.className='hint';scale.textContent='0초 → '+f1(total)+'초';box.appendChild(scale);}
   function build(){
-    var parts = blocks.map(function(b){ return slice(b.k, b.s, b.e); }), n = 0, o = 0;
-    parts.forEach(function(p){ n += p[0].length; });
-    var L = new Float32Array(n), R = new Float32Array(n);
-    parts.forEach(function(p){ L.set(p[0], o); R.set(p[1], o); o += p[0].length; });
-    return [L, R];
+    var times=schedule(),n=Math.max(1,Math.ceil(duration()*SR)),L=new Float32Array(n),R=new Float32Array(n);
+    blocks.forEach(function(b,i){var part=slice(b.k,b.s,b.e),o=Math.round(times[i].at*SR),gain=b.gain==null?1:b.gain;for(var j=0;j<part[0].length&&o+j<n;j++){L[o+j]+=part[0][j]*gain;R[o+j]+=part[1][j]*gain;}});
+    var peak=0;for(var i=0;i<n;i++)peak=Math.max(peak,Math.abs(L[i]),Math.abs(R[i]));if(peak>0.98){var scale=0.98/peak;for(var i=0;i<n;i++){L[i]*=scale;R[i]*=scale;}}return [L,R];
   }
 
   // ---- 재생 (재생 위치 표시·일시정지) ----
@@ -298,14 +305,9 @@ label.l{font-size:14px;color:var(--sub)}
   function tick(){
     if(!P) return;
     var t = pos();
-    if(P.kind === 'clip'){ ph(P.k, P.base + t); ph(1 - P.k, null); }
-    else {
-      var acc = 0, idx = -1, rel = 0;
-      for(var i=0;i<blocks.length;i++){ var l = blocks[i].e - blocks[i].s; if(t < acc + l){ idx = i; rel = t - acc; break; } acc += l; }
-      document.querySelectorAll('.chip').forEach(function(ch, i){ ch.classList.toggle('now', i === idx); });
-      if(idx >= 0){ ph(blocks[idx].k, blocks[idx].s + rel); ph(1 - blocks[idx].k, null); }
-      $('#fill').style.width = (t / P.dur * 100) + '%';
-    }
+    [0,1,2,3].forEach(function(k){ph(k,null);});
+    if(P.kind==='clip')ph(P.k,P.base+t);
+    else{var times=schedule();document.querySelectorAll('.chip').forEach(function(ch,i){var active=t>=times[i].at&&t<times[i].end;ch.classList.toggle('now',active);if(active)ph(blocks[i].k,blocks[i].s+t-times[i].at);});$('#fill').style.width=(t/P.dur*100)+'%';}
     raf = requestAnimationFrame(tick);
   }
   function pauseToggle(kind, k){
@@ -318,7 +320,7 @@ label.l{font-size:14px;color:var(--sub)}
     if(P){ try{ P.src.onended = null; P.src.stop(); }catch(e){} }
     P = null;
     if(ctx && ctx.state === 'suspended') ctx.resume();
-    ph(0, null); ph(1, null);
+    [0,1,2,3].forEach(function(k){ph(k,null);});
     document.querySelectorAll('.chip.now').forEach(function(c){ c.classList.remove('now'); });
     $('#fill').style.width = '0';
     ui();
@@ -342,9 +344,9 @@ label.l{font-size:14px;color:var(--sub)}
 
   // ---- 기록 복사 · WAV 저장 ----
   function record(){
-    var total = 0; blocks.forEach(function(b){ total += b.e - b.s; });
+    var total = duration();
     return '[' + ($('#who').value.trim() || '이름 미입력') + ']\n구성: ' +
-      blocks.map(function(b){ return NAMES[b.k] + '(' + f1(b.s) + '~' + f1(b.e) + '초)'; }).join(' → ') +
+      blocks.map(function(b,i){return NAMES[b.k]+'('+f1(b.s)+'~'+f1(b.e)+'초 / 시작 '+f1(schedule()[i].at)+'초 / 음량 '+Math.round((b.gain==null?1:b.gain)*100)+'%)';}).join(mode==='parallel'?' + ':' → ') +
       ' (총 ' + fmt(total) + ')\n구성 이유: ' + ($('#why').value.trim() || '(미작성)');
   }
   $('#copy').addEventListener('click', function(){
@@ -379,9 +381,10 @@ label.l{font-size:14px;color:var(--sub)}
     say('"' + name + '.wav" 파일로 저장했습니다. 다운로드 폴더를 확인하세요.');
   });
 
-  window.addEventListener('resize', function(){ [0,1].forEach(function(k){ if(clips[k]) paint(k); }); });
+  window.addEventListener('resize', function(){ [0,1,2,3].forEach(function(k){ if(clips[k]) paint(k); }); });
   render();
 })();
 </script>
 </body>
 </html>
+
